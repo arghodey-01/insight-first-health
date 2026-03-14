@@ -14,7 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          created_at: string
+          fee: number | null
+          id: string
+          provider_detail: string | null
+          provider_name: string
+          slot: string | null
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fee?: number | null
+          id?: string
+          provider_detail?: string | null
+          provider_name: string
+          slot?: string | null
+          status?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fee?: number | null
+          id?: string
+          provider_detail?: string | null
+          provider_name?: string
+          slot?: string | null
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          date_of_birth: string | null
+          full_name: string | null
+          gender: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          age: number | null
+          created_at: string
+          diet_plan: Json | null
+          file_name: string
+          food_preference: string | null
+          gender: string | null
+          height: number | null
+          id: string
+          risks: Json | null
+          summary: string | null
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string
+          diet_plan?: Json | null
+          file_name: string
+          food_preference?: string | null
+          gender?: string | null
+          height?: number | null
+          id?: string
+          risks?: Json | null
+          summary?: string | null
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          age?: number | null
+          created_at?: string
+          diet_plan?: Json | null
+          file_name?: string
+          food_preference?: string | null
+          gender?: string | null
+          height?: number | null
+          id?: string
+          risks?: Json | null
+          summary?: string | null
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

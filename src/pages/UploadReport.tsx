@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-// Mock AI results
 const mockResults = {
   summary: "Your Complete Blood Count (CBC) and Metabolic Panel show mostly normal values with a few areas requiring attention. Hemoglobin is slightly low at 11.8 g/dL and Vitamin D is deficient at 15 ng/mL. Cholesterol is borderline high at 215 mg/dL.",
   risks: [
@@ -39,6 +41,7 @@ const mockResults = {
 
 const UploadReport = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({ age: "", gender: "", weight: "", height: "", foodPreference: "" });
   const [file, setFile] = useState<File | null>(null);
@@ -59,10 +62,29 @@ const UploadReport = () => {
   const handleAnalyze = async () => {
     if (!isValid) return;
     setAnalyzing(true);
-    // Simulate AI analysis
     await new Promise((r) => setTimeout(r, 3000));
-    setResults(mockResults);
+    const res = mockResults;
+    setResults(res);
     setAnalyzing(false);
+
+    // Save to DB if logged in
+    if (user) {
+      const dietKey = form.foodPreference === "veg" ? "veg" : "nonVeg";
+      const { error } = await supabase.from("reports").insert({
+        user_id: user.id,
+        file_name: file!.name,
+        age: parseInt(form.age),
+        gender: form.gender,
+        weight: parseFloat(form.weight),
+        height: parseFloat(form.height),
+        food_preference: form.foodPreference,
+        summary: res.summary,
+        risks: res.risks as any,
+        diet_plan: res.diet[dietKey] as any,
+      });
+      if (error) console.error("Failed to save report:", error);
+      else toast({ title: "Report saved to your profile!" });
+    }
   };
 
   const dietPlan = results?.diet[form.foodPreference === "veg" ? "veg" : "nonVeg"] || [];
@@ -75,11 +97,18 @@ const UploadReport = () => {
           <ArrowLeft className="h-4 w-4" /> Back to Home
         </Link>
 
+        {!user && (
+          <div className="mx-auto mb-6 max-w-3xl rounded-lg border border-primary/20 bg-primary/5 p-4 text-center">
+            <p className="text-sm text-foreground">
+              <Link to="/auth" className="font-medium text-primary hover:underline">Sign in</Link> to save your reports and track your health history.
+            </p>
+          </div>
+        )}
+
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-3xl">
           <h1 className="text-3xl font-bold text-foreground md:text-4xl">{t("upload.title")}</h1>
           <p className="mt-2 text-muted-foreground">{t("upload.subtitle")}</p>
 
-          {/* Form */}
           <div className="mt-8 grid gap-6 rounded-xl border border-border bg-card p-6 shadow-card sm:grid-cols-2">
             <div>
               <Label>{t("upload.age")}</Label>
@@ -115,7 +144,6 @@ const UploadReport = () => {
               </Select>
             </div>
 
-            {/* File Upload */}
             <div
               className="sm:col-span-2 cursor-pointer rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-8 text-center transition-colors hover:border-primary/50"
               onClick={() => fileInputRef.current?.click()}
@@ -156,12 +184,10 @@ const UploadReport = () => {
             </div>
           </div>
 
-          {/* Results */}
           {results && (
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="mt-10 space-y-6">
               <h2 className="text-2xl font-bold text-foreground">{t("upload.results")}</h2>
 
-              {/* Summary */}
               <div className="rounded-xl border border-border bg-card p-6 shadow-card">
                 <h3 className="mb-3 flex items-center gap-2 font-semibold text-foreground">
                   <CheckCircle2 className="h-5 w-5 text-secondary" /> {t("upload.summary")}
@@ -169,7 +195,6 @@ const UploadReport = () => {
                 <p className="text-sm leading-relaxed text-muted-foreground">{results.summary}</p>
               </div>
 
-              {/* Risks */}
               <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6">
                 <h3 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
                   <AlertTriangle className="h-5 w-5 text-destructive" /> {t("upload.risks")}
@@ -192,7 +217,6 @@ const UploadReport = () => {
                 </div>
               </div>
 
-              {/* Diet Plan */}
               <div className="rounded-xl border border-secondary/20 bg-secondary/5 p-6">
                 <h3 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
                   <Salad className="h-5 w-5 text-secondary" /> {t("upload.dietPlan")}
@@ -207,7 +231,6 @@ const UploadReport = () => {
                 </div>
               </div>
 
-              {/* CTA */}
               <div className="flex flex-wrap gap-3">
                 <Link to="/doctors">
                   <Button className="bg-hero-gradient text-primary-foreground hover:opacity-90">Consult a Specialist</Button>

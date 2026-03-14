@@ -1,13 +1,22 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { Menu, X, Upload, Activity } from "lucide-react";
+import { Menu, X, Upload, Activity, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const { t } = useTranslation();
+  const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navLinks = [
@@ -52,7 +61,33 @@ const Navbar = () => {
 
         <div className="hidden items-center gap-3 lg:flex">
           <LanguageSwitcher />
-          <Button variant="ghost" size="sm">{t("nav.signIn")}</Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-hero-gradient text-primary-foreground text-sm">
+                      {(user.email || "U")[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex items-center gap-2">
+                    <User className="h-4 w-4" /> Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => signOut()} className="flex items-center gap-2 text-destructive">
+                  <LogOut className="h-4 w-4" /> Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="ghost" size="sm">{t("nav.signIn")}</Button>
+            </Link>
+          )}
           <Link to="/upload">
             <Button size="sm" className="bg-hero-gradient text-primary-foreground hover:opacity-90">
               <Upload className="mr-2 h-4 w-4" /> {t("nav.uploadReport")}
@@ -78,6 +113,16 @@ const Navbar = () => {
                   {l.label}
                 </a>
               )
+            )}
+            {user ? (
+              <>
+                <Link to="/profile" className="text-sm font-medium text-muted-foreground" onClick={() => setMobileOpen(false)}>Profile</Link>
+                <button onClick={() => { signOut(); setMobileOpen(false); }} className="text-sm font-medium text-destructive text-left">Sign Out</button>
+              </>
+            ) : (
+              <Link to="/auth" className="text-sm font-medium text-muted-foreground" onClick={() => setMobileOpen(false)}>
+                {t("nav.signIn")}
+              </Link>
             )}
             <LanguageSwitcher />
             <Link to="/upload" onClick={() => setMobileOpen(false)}>

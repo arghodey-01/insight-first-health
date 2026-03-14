@@ -9,6 +9,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const doctorsList = [
   { id: 1, name: "Dr. Priya Sharma", specialty: "Cardiologist", hospital: "Apollo Hospital, Delhi", experience: "15 years", rating: 4.9, reviews: 312, fee: 800, available: true, image: "👩‍⚕️", slots: ["10:00 AM", "11:30 AM", "2:00 PM", "4:30 PM"] },
@@ -23,6 +25,7 @@ type Step = "list" | "slots" | "payment" | "confirmed";
 
 const DoctorBooking = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [step, setStep] = useState<Step>("list");
   const [selectedDoctor, setSelectedDoctor] = useState<typeof doctorsList[0] | null>(null);
   const [selectedSlot, setSelectedSlot] = useState("");
@@ -38,11 +41,25 @@ const DoctorBooking = () => {
     setStep("payment");
   };
 
-  const handlePay = () => {
+  const handlePay = async () => {
     if (!paymentForm.name || !paymentForm.card || !paymentForm.expiry || !paymentForm.cvv) {
       toast({ title: "Please fill all payment details", variant: "destructive" });
       return;
     }
+    
+    // Save booking if logged in
+    if (user && selectedDoctor) {
+      await supabase.from("bookings").insert({
+        user_id: user.id,
+        type: "doctor" as const,
+        provider_name: selectedDoctor.name,
+        provider_detail: `${selectedDoctor.specialty} — ${selectedDoctor.hospital}`,
+        slot: selectedSlot,
+        fee: selectedDoctor.fee,
+        status: "confirmed",
+      });
+    }
+
     setStep("confirmed");
     toast({ title: t("doctors.bookingConfirmed") });
   };
@@ -67,17 +84,10 @@ const DoctorBooking = () => {
         <p className="mt-2 text-muted-foreground">{t("doctors.subtitle")}</p>
 
         <AnimatePresence mode="wait">
-          {/* Doctor List */}
           {step === "list" && (
             <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {doctorsList.map((doc, i) => (
-                <motion.div
-                  key={doc.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="rounded-xl border border-border bg-card p-6 shadow-card transition-all hover:shadow-card-hover"
-                >
+                <motion.div key={doc.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl border border-border bg-card p-6 shadow-card transition-all hover:shadow-card-hover">
                   <div className="text-5xl mb-3">{doc.image}</div>
                   <h3 className="font-semibold text-card-foreground">{doc.name}</h3>
                   <p className="text-sm text-primary font-medium">{doc.specialty}</p>
@@ -92,7 +102,7 @@ const DoctorBooking = () => {
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-lg font-bold text-foreground">₹{doc.fee}</span>
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-secondary">
-                      <span className="h-2 w-2 rounded-full bg-secondary animate-pulse-soft" />
+                      <span className="h-2 w-2 rounded-full bg-secondary animate-pulse" />
                       {t("doctors.available")}
                     </span>
                   </div>
@@ -104,7 +114,6 @@ const DoctorBooking = () => {
             </motion.div>
           )}
 
-          {/* Slot Selection */}
           {step === "slots" && selectedDoctor && (
             <motion.div key="slots" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="mx-auto mt-8 max-w-lg">
               <div className="rounded-xl border border-border bg-card p-6 shadow-card">
@@ -130,7 +139,6 @@ const DoctorBooking = () => {
             </motion.div>
           )}
 
-          {/* Payment */}
           {step === "payment" && selectedDoctor && (
             <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="mx-auto mt-8 max-w-lg">
               <div className="rounded-xl border border-border bg-card p-6 shadow-card">
@@ -170,7 +178,6 @@ const DoctorBooking = () => {
             </motion.div>
           )}
 
-          {/* Confirmed */}
           {step === "confirmed" && selectedDoctor && (
             <motion.div key="confirmed" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mx-auto mt-16 max-w-md text-center">
               <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-secondary/10">
