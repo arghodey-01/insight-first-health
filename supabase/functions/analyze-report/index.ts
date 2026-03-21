@@ -15,13 +15,13 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { age, gender, weight, height, foodPreference, fileName } = await req.json();
+    const { age, gender, weight, height, foodPreference, fileName, fileBase64, fileMimeType } = await req.json();
 
     const systemPrompt = `You are a medical AI assistant that analyzes blood report data. You MUST respond with valid JSON only, no markdown, no code blocks.
 
 Return this exact JSON structure:
 {
-  "summary": "A 2-3 sentence summary of the blood report findings mentioning specific values",
+  "summary": "A 2-3 sentence summary of the blood report findings mentioning specific values extracted from the report",
   "risks": [
     {"label": "Risk name", "severity": "high|moderate|low", "confidence": 75}
   ],
@@ -43,9 +43,9 @@ Return this exact JSON structure:
   }
 }
 
-Include 3-5 risks with realistic confidence scores (60-95). Tailor diet plans to Indian cuisine. Consider the patient's age, gender, BMI, and food preference.`;
+Extract ACTUAL values from the blood report image/document. Mention specific test names and their values in the summary. Identify risks based on actual out-of-range values. Include 3-5 risks with realistic confidence scores (60-95). Tailor diet plans to Indian cuisine. Consider the patient's age, gender, BMI, and food preference.`;
 
-    const userPrompt = `Analyze a blood report for a patient with these details:
+    const userTextPrompt = `Analyze this blood report for a patient with these details:
 - Age: ${age} years
 - Gender: ${gender}
 - Weight: ${weight} kg
@@ -53,9 +53,21 @@ Include 3-5 risks with realistic confidence scores (60-95). Tailor diet plans to
 - Food Preference: ${foodPreference}
 - Report File: ${fileName}
 
-Since I cannot extract the actual blood values from the file, generate a realistic analysis based on common findings for this demographic profile. Provide health risks, a summary, and personalized diet plans for both veg and non-veg options.
+Extract actual blood test values from the attached report. Identify abnormal values, health risks, and provide personalized diet plans.
 
 Return ONLY valid JSON, no other text.`;
+
+    // Build multimodal message with the file
+    const userContent: any[] = [{ type: "text", text: userTextPrompt }];
+
+    if (fileBase64 && fileMimeType) {
+      userContent.push({
+        type: "image_url",
+        image_url: {
+          url: `data:${fileMimeType};base64,${fileBase64}`,
+        },
+      });
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -64,10 +76,10 @@ Return ONLY valid JSON, no other text.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user", content: userContent },
         ],
       }),
     });
