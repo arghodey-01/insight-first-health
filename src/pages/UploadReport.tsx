@@ -42,10 +42,22 @@ const UploadReport = () => {
 
   const isValid = form.age && form.gender && form.weight && form.height && form.foodPreference && file;
 
+  const fileToBase64 = (f: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]); // strip data:...;base64, prefix
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(f);
+    });
+
   const handleAnalyze = async () => {
     if (!isValid) return;
     setAnalyzing(true);
     try {
+      const base64 = await fileToBase64(file!);
       const { data, error: fnError } = await supabase.functions.invoke("analyze-report", {
         body: {
           age: parseInt(form.age),
@@ -54,6 +66,8 @@ const UploadReport = () => {
           height: parseFloat(form.height),
           foodPreference: form.foodPreference,
           fileName: file!.name,
+          fileBase64: base64,
+          fileMimeType: file!.type || "application/pdf",
         },
       });
 
