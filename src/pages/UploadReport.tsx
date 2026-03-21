@@ -86,6 +86,7 @@ const UploadReport = () => {
       toast({ title: "Analysis failed", description: err.message || "Please try again.", variant: "destructive" });
     } finally {
       setAnalyzing(false);
+    }
   };
 
   const dietPlan = results?.diet[form.foodPreference === "veg" ? "veg" : "nonVeg"] || [];
