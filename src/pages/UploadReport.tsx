@@ -86,24 +86,6 @@ const UploadReport = () => {
       toast({ title: "Analysis failed", description: err.message || "Please try again.", variant: "destructive" });
     } finally {
       setAnalyzing(false);
-    }
-    if (user) {
-      const dietKey = form.foodPreference === "veg" ? "veg" : "nonVeg";
-      const { error } = await supabase.from("reports").insert({
-        user_id: user.id,
-        file_name: file!.name,
-        age: parseInt(form.age),
-        gender: form.gender,
-        weight: parseFloat(form.weight),
-        height: parseFloat(form.height),
-        food_preference: form.foodPreference,
-        summary: res.summary,
-        risks: res.risks as any,
-        diet_plan: res.diet[dietKey] as any,
-      });
-      if (error) console.error("Failed to save report:", error);
-      else toast({ title: "Report saved to your profile!" });
-    }
   };
 
   const dietPlan = results?.diet[form.foodPreference === "veg" ? "veg" : "nonVeg"] || [];
