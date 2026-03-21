@@ -55,7 +55,7 @@ const riskProductMap: Record<string, number[]> = {
   bone: [1, 4],
   heart: [2, 11, 13, 18],
   cardiac: [2, 13],
-  blood pressure: [13],
+  "blood pressure": [13],
   hypertension: [13],
   thyroid: [17],
   immunity: [16, 17],
