@@ -13,30 +13,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-const mockResults = {
-  summary: "Your Complete Blood Count (CBC) and Metabolic Panel show mostly normal values with a few areas requiring attention. Hemoglobin is slightly low at 11.8 g/dL and Vitamin D is deficient at 15 ng/mL. Cholesterol is borderline high at 215 mg/dL.",
-  risks: [
-    { label: "Mild Anemia", severity: "moderate", confidence: 88 },
-    { label: "Vitamin D Deficiency", severity: "high", confidence: 94 },
-    { label: "Borderline Hypercholesterolemia", severity: "moderate", confidence: 82 },
-    { label: "Pre-diabetic Glucose Levels", severity: "low", confidence: 65 },
-  ],
+type AnalysisResult = {
+  summary: string;
+  risks: { label: string; severity: string; confidence: number }[];
   diet: {
-    veg: [
-      { meal: "Breakfast", items: "Ragi porridge with almonds, banana, and fortified milk" },
-      { meal: "Mid-Morning", items: "Spinach smoothie with dates and flaxseeds" },
-      { meal: "Lunch", items: "Brown rice, dal, beetroot sabzi, curd, salad" },
-      { meal: "Snack", items: "Roasted chana, walnuts, orange" },
-      { meal: "Dinner", items: "Multigrain roti, palak paneer, mushroom curry" },
-    ],
-    nonVeg: [
-      { meal: "Breakfast", items: "Egg white omelette with whole wheat toast, fortified OJ" },
-      { meal: "Mid-Morning", items: "Greek yogurt with berries and chia seeds" },
-      { meal: "Lunch", items: "Grilled chicken, quinoa, steamed broccoli, salad" },
-      { meal: "Snack", items: "Boiled eggs, mixed nuts, apple" },
-      { meal: "Dinner", items: "Baked salmon, sweet potato, sautéed spinach" },
-    ],
-  },
+    veg: { meal: string; items: string }[];
+    nonVeg: { meal: string; items: string }[];
+  };
 };
 
 const UploadReport = () => {
