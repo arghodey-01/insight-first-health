@@ -45,12 +45,48 @@ const UploadReport = () => {
   const handleAnalyze = async () => {
     if (!isValid) return;
     setAnalyzing(true);
-    await new Promise((r) => setTimeout(r, 3000));
-    const res = mockResults;
-    setResults(res);
-    setAnalyzing(false);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("analyze-report", {
+        body: {
+          age: parseInt(form.age),
+          gender: form.gender,
+          weight: parseFloat(form.weight),
+          height: parseFloat(form.height),
+          foodPreference: form.foodPreference,
+          fileName: file!.name,
+        },
+      });
 
-    // Save to DB if logged in
+      if (fnError) throw fnError;
+      if (data.error) throw new Error(data.error);
+
+      const res: AnalysisResult = data;
+      setResults(res);
+
+      // Save to DB if logged in
+      if (user) {
+        const dietKey = form.foodPreference === "veg" ? "veg" : "nonVeg";
+        const { error } = await supabase.from("reports").insert({
+          user_id: user.id,
+          file_name: file!.name,
+          age: parseInt(form.age),
+          gender: form.gender,
+          weight: parseFloat(form.weight),
+          height: parseFloat(form.height),
+          food_preference: form.foodPreference,
+          summary: res.summary,
+          risks: res.risks as any,
+          diet_plan: res.diet[dietKey] as any,
+        });
+        if (error) console.error("Failed to save report:", error);
+        else toast({ title: "Report saved to your profile!" });
+      }
+    } catch (err: any) {
+      console.error("Analysis failed:", err);
+      toast({ title: "Analysis failed", description: err.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setAnalyzing(false);
+    }
     if (user) {
       const dietKey = form.foodPreference === "veg" ? "veg" : "nonVeg";
       const { error } = await supabase.from("reports").insert({
